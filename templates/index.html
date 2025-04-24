@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Watcher 2.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Rubik:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Modern dark theme with purple undertones */
+            --dark-bg: #1e152a;
+            --card-bg: #2b2239;
+            --border-color: #3a2d52;
+            
+            /* Accent colors */
+            --accent-primary: #b946f7;      /* Purple */
+            --accent-secondary: #8cd8e7;    /* Cyan */
+            --accent-tertiary: #ff5ca4;     /* Pink */
+            --accent-danger: #f34444;       /* Red */
+            --accent-warning: #f5a742;      /* Orange */
+            --accent-info: #8cd8e7;         /* Cyan */
+            
+            /* Text colors */
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #b3a4c4;
+            --text-highlight: #d5bfff;
+        }
+        
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            font-family: 'Manrope', sans-serif;
+            line-height: 1.6;
+        }
+        
+        .navbar {
+            background: linear-gradient(90deg, var(--accent-primary) 0%, #9039db 100%);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .navbar-brand {
+            font-family: 'Rubik', sans-serif;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: linear-gradient(90deg, #332647 0%, #3a2d52 100%);
+            color: var(--text-primary);
+            font-weight: bold;
+            font-family: 'Rubik', sans-serif;
+            border-bottom: 2px solid var(--accent-primary);
+            padding: 12px 16px;
+        }
+        
+        .table {
+            color: var(--text-primary);
+        }
+        
+        .table-striped > tbody > tr:nth-of-type(odd) {
+            background-color: rgba(185, 70, 247, 0.05);
+        }
+        
+        .table > thead {
+            border-bottom: 2px solid var(--accent-secondary);
+            font-family: 'Rubik', sans-serif;
+        }
+        
+        .badge {
+            font-weight: normal;
+            letter-spacing: 0.5px;
+            padding: 0.35em 0.65em;
+        }
+        
+        .stat-value {
+            color: var(--text-secondary);
+            font-family: 'Space Mono', monospace;
+            font-size: 1.2em;
+        }
+        
+        /* Stat label colors match their border */
+        .stat-card.primary .stat-label {
+            color: var(--accent-primary);
+        }
+        
+        .stat-card.secondary .stat-label {
+            color: var(--accent-secondary);
+        }
+        
+        .stat-card.tertiary .stat-label {
+            color: var(--accent-tertiary);
+        }
+        
+        .stat-card.danger .stat-label {
+            color: var(--accent-danger);
+        }
+        
+        .stat-card.warning .stat-label {
+            color: var(--accent-warning);
+        }
+        
+        .stat-card.info .stat-label {
+            color: var(--accent-info);
+        }
+        
+        .stat-label {
+            margin-bottom: 0;
+            font-weight: 500;
+            color:#ccc;
+        }
+        
+        /* Action buttons */
+        .btn-action {
+            background-color: transparent;
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            transition: all 0.2s;
+            margin-right: 5px;
+        }
+        
+        .btn-action:hover {
+            background: linear-gradient(to right, var(--accent-primary), var(--accent-tertiary));
+            border-color: var(--accent-tertiary);
+            color: white;
+        }
+        
+        .btn-danger-outline {
+            background-color: transparent;
+            border-color: var(--accent-danger);
+            color: var(--accent-danger);
+        }
+        
+        .btn-danger-outline:hover {
+            background-color: var(--accent-danger);
+            color: white;
+        }
+        
+        /* Grid background for subtle design touch */
+        .grid-overlay {
+            position: relative;
+            background-color: #101010;
+        }
+        
+        .grid-overlay::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(185, 70, 247, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(185, 70, 247, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+        
+        /* Improved stat cards */
+        .stat-card {
+            border-left: 4px solid;
+            padding-left: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card.primary {
+            border-left-color: var(--accent-primary);
+        }
+        
+        .stat-card.secondary {
+            border-left-color: var(--accent-secondary);
+        }
+        
+        .stat-card.tertiary {
+            border-left-color: var(--accent-tertiary);
+        }
+        
+        .stat-card.danger {
+            border-left-color: var(--accent-danger);
+        }
+        
+        .stat-card.warning {
+            border-left-color: var(--accent-warning);
+        }
+        
+        .stat-card.info {
+            border-left-color: var(--accent-info);
+        }
+
+        .price-distance {
+            font-size: 0.85rem;
+            color: #8a7fa3; /* Darker for better readability */
+            margin-top: 0.25rem;
+        }
+
+        .price-distance.near-threshold {
+            color: var(--accent-warning);
+            font-weight: 500;
+        }
+
+        .price-distance.critical {
+            color: var(--accent-danger);
+            font-weight: 700;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="grid-overlay">
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">ORDER WATCHER 2.0</span>
+            <span class="navbar-text" id="status-indicator">
+                Monitoring: <span class="badge bg-success">Active</span>
+            </span>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        STATISTICS
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-card primary">
+                            <p class="stat-label">Active Orders</p>
+                            <p class="stat-value" id="active-count">0</p>
+                        </div>
+                        <div class="stat-card danger">
+                            <p class="stat-label">SPX Short Contracts</p>
+                            <p class="stat-value" id="spx-short-contracts">0</p>
+                        </div>
+                        <div class="stat-card secondary">
+                            <p class="stat-label">SPX Long Contracts</p>
+                            <p class="stat-value" id="spx-long-contracts">0</p>
+                        </div>
+                        <hr>
+                        <p class="stat-label">Last Check:</p>
+                        <p id="last-check" class="text-secondary">Never</p>
+                        <p class="stat-label">Token Status:</p>
+                        <p id="token-expiration" class="text-secondary">Checking...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        NET LIQUIDATION VALUE
+                    </div>
+                    <div class="card-body">
+                        <canvas id="netLiqChart" style="height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>ACTIVE ORDERS</span>
+                <div>
+                    <button id="refresh-btn" class="btn btn-sm btn-action">
+                        <span id="refresh-status">Refresh</span>
+                    </button>
+                    <button id="toggle-monitor-btn" class="btn btn-sm btn-danger-outline">
+                        Stop Monitoring
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="orders-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Action</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Orders will be populated by JavaScript -->
+                            <tr>
+                                <td colspan="8" class="text-center">Loading orders...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        const appState = {
+            activeOrders: [],
+            recreatedCount: 0,
+            lastChecked: null,
+            netLiqChart: null,
+            isMonitoring: true,
+            netLiqData: [],
+            ignoredOrders: new Set(),
+            processingToggle: null  // Track which order ID is currently being toggled
+        };
+
+        // Add to the top of the script section:
+
+        let refreshCountdown = 5; // Seconds between refreshes
+        let countdownInterval = null;
+
+        // Initialize chart for Net Liquidation Value
+        function initChart() {
+            const ctx = document.getElementById('netLiqChart').getContext('2d');
+            
+            // Create gradient for chart background
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(123, 104, 238, 0.4)');
+            gradient.addColorStop(1, 'rgba(50, 205, 50, 0.05)');
+            
+            appState.netLiqChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Net Liquidation Value',
+                        data: [],
+                        borderColor: 'rgba(123, 104, 238, 1)',
+                        backgroundColor: gradient,
+                        borderWidth: 2,
+                        tension: 0.4, // Increased for smoother curves
+                        fill: true,
+                        pointRadius: 0, // Remove points/circles
+                        pointHoverRadius: 3, // Only show on hover
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    color: '#ffffff',
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#cccccc',
+                                maxTicksLimit: 8
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#cccccc',
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff',
+                                font: {
+                                    family: 'Roboto'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '$' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /**
+         * Format option symbols to show just strike and type (P/C)
+         * Example: "SPX_052420C2850000" becomes "2850 C" 
+         */
+        function formatOptionSymbol(symbol) {
+            if (!symbol) return 'N/A';
+            
+            // Check if it's an SPX option
+            if (/SPX.*[PC]\d+/.test(symbol)) {
+                // Extract the strike price and option type
+                // This regex looks for a P or C followed by digits, possibly with trailing zeros
+                const match = symbol.match(/([PC])(\d+)(?:000)?(?:\.0+)?$/i);
+                if (match) {
+                    const [_, type, strikeWithZeros] = match;
+                    
+                    // Remove trailing zeros from strike and add space between strike and type
+                    const strike = parseInt(strikeWithZeros, 10);
+                    return `${strike} ${type.toUpperCase()}`;
+                }
+            }
+            
+            // If it doesn't match our pattern, return the original symbol
+            return symbol;
+        }
+
+        // Update orders table with provided data
+        function updateOrdersTable(orders) {
+            const tableBody = document.querySelector('#orders-table tbody');
+            tableBody.innerHTML = '';
+            
+            if (orders.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="8" class="text-center">No active orders found</td>`;
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            orders.forEach(order => {
+                // Extract order details safely with fallbacks
+                const orderLeg = order.orderLegCollection && order.orderLegCollection[0] || {};
+                const instrument = orderLeg.instrument || {};
+                const orderId = order.orderId || 'unknown';
+                
+                // Check monitoring status
+                const isMonitored = order.isMonitored !== false; // Default to true if not specified
+                
+                const row = document.createElement('tr');
+                // Grey out rows not being monitored
+                row.className = isMonitored ? '' : 'table-secondary'; 
+                
+                row.innerHTML = `
+                    <td>${orderId}</td>
+                    <td>${formatOptionSymbol(instrument.symbol) || 'N/A'}</td>
+                    <td>${order.orderType || 'N/A'}</td>
+                    <td>${orderLeg.instruction || 'N/A'}</td>
+                    <td>${order.quantity || orderLeg.quantity || 'N/A'}</td>
+                    <td>${formatPrice(order)}</td>
+                    <td>
+                        <span class="badge ${getStatusClass(order.status)}">${order.status || 'UNKNOWN'}</span>
+                        ${!isMonitored ? '<span class="badge bg-warning text-dark ms-1">Not Monitored</span>' : ''}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm ${isMonitored ? 'btn-outline-secondary' : 'btn-outline-success'} toggle-monitoring" 
+                            data-order-id="${orderId}" data-monitoring="${isMonitored}">
+                            ${isMonitored ? 'Stop Monitoring' : 'Resume Monitoring'}
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Cancel an order via API
+        function cancelOrder(orderId) {
+            if (!confirm(`Are you sure you want to cancel order ${orderId}?`)) {
+                return;
+            }
+            
+            fetch(`/api/orders/${orderId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Order ${orderId} canceled successfully`);
+                    refreshData();
+                } else {
+                    alert(`Failed to cancel order: ${data.message}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while canceling the order');
+            });
+        }
+
+        // Update formatPrice function to include better proximity indicators
+        function formatPrice(order) {
+            // Early return for non-stop orders
+            if (order.orderType === 'LIMIT') return `$${order.price || 'N/A'}`;
+            if (order.orderType !== 'STOP' && order.orderType !== 'STOP_LIMIT') return 'MKT';
+
+            // Handle stop orders with potential current price information
+            const stopPrice = order.stopPrice || 'N/A';
+            const limitPrice = order.orderType === 'STOP_LIMIT' ? `, Limit: $${order.price || 'N/A'}` : '';
+
+            // If we have current price info, show only the current price (no parentheses, no diff)
+            if (order.currentPrice) {
+                const currentPrice = order.currentPrice;
+                const priceDisplay = currentPrice < 1 ?
+                    currentPrice.toFixed(3) :
+                    currentPrice.toFixed(2);
+
+                // Proximity thresholds for color only
+                let proximityClass = '';
+                const diff = currentPrice - order.stopPrice;
+                const pctDiff = (diff / currentPrice * 100).toFixed(1);
+                if (Math.abs(pctDiff) < 10) {
+                    proximityClass = 'critical';
+                } else if (Math.abs(pctDiff) < 25) {
+                    proximityClass = 'near-threshold';
+                }
+
+                // Only show the current price, as requested
+                return `<span>Stop: $${stopPrice}${limitPrice}</span>
+                        <div class="price-distance ${proximityClass}">
+                            <small>Current: $${priceDisplay}</small>
+                        </div>`;
+            }
+
+            // Fall back to original format if no current price available
+            return `Stop: $${stopPrice}${limitPrice}`;
+        }
+
+        // Get appropriate status classes
+        function getStatusClass(status) {
+            if (!status) return 'bg-secondary';
+            
+            switch (status.toUpperCase()) {
+                case 'WORKING': return 'bg-success';
+                case 'PENDING_ACTIVATION': return 'bg-warning text-dark';
+                case 'QUEUED': return 'bg-info text-dark';
+                case 'AWAITING_PARENT_ORDER': return 'bg-primary';
+                case 'ACCEPTED': return 'bg-info';
+                default: return 'bg-secondary';
+            }
+        }
+
+        // Update the statistics section in JavaScript
+        function updateStatistics(data) {
+            // Helper function to safely update elements with consistent error handling
+            function safeUpdateText(elementId, value) {
+                const element = document.getElementById(elementId);
+                if (element) element.textContent = value;
+            }
+
+            // Create a more efficient positions object with defaults for missing values
+            const positions = data.positions || {};
+            
+            // Update counts with clean fallbacks using nullish coalescing
+            safeUpdateText('active-count', data.active_orders?.length ?? 0);
+            safeUpdateText('recreated-count', data.orders_recreated ?? appState.recreatedCount ?? 0);
+            safeUpdateText('spx-short-contracts', positions.spx_short_contracts ?? 0);
+            safeUpdateText('spx-long-contracts', positions.spx_long_contracts ?? 0);
+            // Old commented-out code:
+            //safeUpdateText('spx-stops-count', positions.spx_active_stops ?? 0);
+            //safeUpdateText('spx-closing-count', positions.spx_closing ?? 0);
+            
+            // Update timestamp
+            const lastChecked = data.last_updated ? new Date(data.last_updated) : new Date();
+            safeUpdateText('last-check', formatDateTime(lastChecked));
+            
+            // Only update app state after all display updates
+            appState.lastChecked = lastChecked;
+            appState.recreatedCount = data.orders_recreated ?? appState.recreatedCount;
+        }
+
+        // Extract monitoring status update to improve maintainability
+        function updateMonitoringStatus(isActive) {
+            const statusIndicator = document.querySelector('#status-indicator .badge');
+            const toggleBtn = document.getElementById('toggle-monitor-btn');
+            
+            if (statusIndicator) {
+                statusIndicator.className = isActive ? 'badge bg-success' : 'badge bg-danger';
+                statusIndicator.textContent = isActive ? 'Active' : 'Inactive';
+            }
+            
+            if (toggleBtn) {
+                toggleBtn.textContent = isActive ? 'Stop Monitoring' : 'Start Monitoring';
+            }
+        }
+
+        // Update Net Liquidation Value chart
+        function updateNetLiqChart(data) {
+            // Early return if chart isn't initialized
+            if (!appState.netLiqChart) return;
+            
+            try {
+                // Validate that net_liq_history exists and is an array
+                if (!data.net_liq_history || !Array.isArray(data.net_liq_history) || data.net_liq_history.length === 0) {
+                    console.warn('Missing or empty net_liq_history data');
+                    return; // Exit early if no valid data
+                }
+                
+                // Store in app state
+                appState.netLiqData = data.net_liq_history;
+                
+                const chart = appState.netLiqChart;
+                const labels = [];
+                const values = [];
+                
+                // Process each data point, with validation
+                data.net_liq_history.forEach(point => {
+                    // Ensure each point is an array with 2 elements [timestamp, value]
+                    if (Array.isArray(point) && point.length === 2) {
+                        try {
+                            const date = new Date(point[0]);
+                            // Only add valid points to chart
+                            if (!isNaN(date) && !isNaN(point[1])) {
+                                labels.push(formatTime(date));
+                                values.push(point[1]);
+                            }
+                        } catch (e) {
+                            console.warn('Error processing chart point:', e);
+                        }
+                    }
+                });
+                
+                // Only update chart if we have valid data points
+                if (values.length > 0) {
+                    chart.data.labels = labels;
+                    chart.data.datasets[0].data = values;
+                    chart.update();
+                }
+            } catch (error) {
+                console.error('Error updating chart:', error);
+            }
+        }
+
+        // Format time for display (HH:MM:SS)
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Format date-time for display
+        function formatDateTime(date) {
+            return date.toLocaleString();
+        }
+
+        // Add this function to the index.html script section, replacing the existing updateTokenExpirationStatus
+        function updateTokenExpirationStatus() {
+            fetch('/api/token-status')
+                .then(response => {
+                    // Handle non-200 responses more gracefully
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            // Still process the error response if it's JSON
+                            throw new Error(errorData.error || `API error: ${response.status}`);
+                        }).catch(e => {
+                            // If error response isn't valid JSON
+                            throw new Error(`API error: ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const expiresInMinutes = Math.round((data.expires_in || 0) / 60);
+                    const refreshTokenAgeDays = data.refresh_token_age_days || 0;
+                    const expirationElement = document.getElementById('token-expiration');
+                    
+                    if (!expirationElement) return;
+                    
+                    // Calculate days left until refresh token expires (typically 7 days)
+                    const refreshDaysLeft = Math.max(0, 7 - refreshTokenAgeDays).toFixed(1);
+                    const tokenStatus = `API: ${expiresInMinutes}min / Refresh: ${refreshDaysLeft}d`;
+                    
+                    // For both current session and refresh token status
+                    if (refreshTokenAgeDays > 6) {
+                        // Critical - refresh token expiring soon
+                        expirationElement.className = 'text-danger';
+                        expirationElement.textContent = `${tokenStatus} - EXPIRES SOON!`;
+                    } else if (expiresInMinutes <= 5) {
+                        // Critical - current session expiring soon
+                        expirationElement.className = 'text-danger';
+                        expirationElement.textContent = `${tokenStatus} - Session expiring!`;
+                    } else if (refreshTokenAgeDays > 5 || expiresInMinutes <= 15) {
+                        // Warning level
+                        expirationElement.className = 'text-warning';
+                        expirationElement.textContent = tokenStatus;
+                    } else {
+                        // Normal status
+                        expirationElement.className = 'text-secondary'; 
+                        expirationElement.textContent = tokenStatus;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking token status:', error);
+                    
+                    // Provide more informative message about the error
+                    const expirationElement = document.getElementById('token-expiration');
+                    if (expirationElement) {
+                        expirationElement.className = 'text-danger';
+                        expirationElement.textContent = 'Token status: ' + 
+                            (error.message || 'Check failed');
+                    }
+                    
+                    // Implement automated retry after 30 seconds on failure
+                    setTimeout(updateTokenExpirationStatus, 30000);
+                });
+        }
+
+        // Main refresh function
+        function refreshData() {
+            // Clear any existing countdown
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            
+            const refreshBtn = document.getElementById('refresh-btn');
+            refreshBtn.disabled = true;
+            const refreshStatus = document.getElementById('refresh-status');
+            refreshStatus.textContent = 'Refreshing...';
+            
+            fetch('/api/orders')
+                .then(response => {
+                    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("API Response:", data); // Debug: log the full response
+                    
+                    // Process ignored orders from server
+                    if (data.ignored_orders) {
+                        appState.ignoredOrders = new Set(data.ignored_orders);
+                    }
+                    
+                    // Only try to update if we have valid data
+                    if (Array.isArray(data.active_orders)) {
+                        updateOrdersTable(data.active_orders);
+                    } else {
+                        console.error("active_orders is not an array:", data.active_orders);
+                    }
+                    
+                    updateStatistics(data);
+                    
+                    // Only update chart if we have valid net_liq_history
+                    if (Array.isArray(data.net_liq_history) && data.net_liq_history.length > 0) {
+                        updateNetLiqChart(data);
+                    } else {
+                        console.warn("Empty or invalid net_liq_history:", data.net_liq_history);
+                    }
+                    
+                    refreshStatus.textContent = 'Updated';
+                    refreshBtn.disabled = false;
+                    
+                    // Start countdown for next refresh
+                    refreshCountdown = 5; // Reset to 5 seconds
+                    updateCountdown();
+                    countdownInterval = setInterval(updateCountdown, 1000);
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    refreshStatus.textContent = 'Error';
+                    refreshBtn.disabled = false;
+                    
+                    // Try to provide more details in console
+                    console.error('Refresh error details:', error.stack || error.message || error);
+                });
+        }
+
+        // Add the countdown update function
+        function updateCountdown() {
+            const refreshStatus = document.getElementById('refresh-status');
+            
+            if (refreshCountdown <= 0) {
+                refreshStatus.textContent = 'Refreshing...';
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+                return;
+            }
+            
+            refreshStatus.textContent = `Refresh (${refreshCountdown}s)`;
+            refreshCountdown--;
+        }
+        
+        // Improved toggle monitoring function with proper debouncing
+        function toggleOrderMonitoring(orderId, currentlyMonitored) {
+            // Prevent processing if already handling this order
+            if (appState.processingToggle === orderId) {
+                return;
+            }
+            
+            // Set processing flag to prevent duplicate requests
+            appState.processingToggle = orderId;
+            
+            // Find related UI elements
+            const btn = document.querySelector(`button.toggle-monitoring[data-order-id="${orderId}"]`);
+            if (btn) btn.disabled = true;
+            
+            // Target monitoring state (opposite of current)
+            const newMonitoringState = !currentlyMonitored;
+            
+            // Send request to server BEFORE updating UI
+            fetch(`/api/orders/${orderId}/toggle_monitoring`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ monitor: newMonitoringState })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update local state to match server state
+                    if (data.monitoring) {
+                        appState.ignoredOrders.delete(orderId);
+                    } else {
+                        appState.ignoredOrders.add(orderId);
+                    }
+                    
+                    // Only now update UI to match confirmed server state
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = data.monitoring ? 'Stop Monitoring' : 'Resume Monitoring';
+                        btn.className = `btn btn-sm ${data.monitoring ? 
+                            'btn-outline-secondary' : 'btn-outline-success'} toggle-monitoring`;
+                        btn.setAttribute('data-monitoring', data.monitoring.toString());
+                        
+                        // Update row styling based on server response
+                        const row = btn.closest('tr');
+                        if (row) {
+                            row.className = data.monitoring ? '' : 'table-secondary';
+                            updateMonitoringBadge(row, data.monitoring);
+                        }
+                    }
+                } else {
+                    console.error('Server rejected monitoring change:', data.message);
+                    if (btn) btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error toggling monitoring:', error);
+                if (btn) btn.disabled = false;
+            })
+            .finally(() => {
+                // Always clear processing flag
+                appState.processingToggle = null;
+            });
+        }
+
+        // Helper to update the "Not Monitored" badge
+        function updateMonitoringBadge(row, isMonitored) {
+            const statusCell = row.querySelector('td:nth-child(7)');
+            if (!statusCell) return;
+            
+            let badge = statusCell.querySelector('.badge.bg-warning.text-dark.ms-1');
+            
+            if (!isMonitored && !badge) {
+                // Add "Not Monitored" badge
+                badge = document.createElement('span');
+                badge.className = 'badge bg-warning text-dark ms-1';
+                badge.textContent = 'Not Monitored';
+                statusCell.appendChild(badge);
+            } else if (isMonitored && badge) {
+                // Remove "Not Monitored" badge
+                badge.remove();
+            }
+        }
+
+        // IMPORTANT: Only use this event handler initialization once
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize chart first
+            initChart();
+            
+            // Set up event handlers
+            document.getElementById('refresh-btn').addEventListener('click', refreshData);
+            
+            // Load initial data
+            refreshData();
+            
+            // Set up refresh interval - 5 seconds
+            setInterval(refreshData, 5000);
+            
+            // Use event delegation for monitoring toggle buttons - more efficient
+            document.getElementById('orders-table').addEventListener('click', (e) => {
+                if (e.target.classList.contains('toggle-monitoring')) {
+                    const orderId = e.target.dataset.orderId;
+                    const isMonitored = e.target.dataset.monitoring === 'true';
+                    toggleOrderMonitoring(orderId, isMonitored);
+                    // Prevent event bubbling to avoid duplicate handling
+                    e.stopPropagation();
+                }
+            });
+
+            // Check token expiration immediately and every minute
+            updateTokenExpirationStatus();
+            setInterval(updateTokenExpirationStatus, 60000); // Every minute
+        });
+
+        // REMOVE this - it creates duplicate event handlers
+        // document.addEventListener('click', function(e) {
+        //     if (e.target.classList.contains('toggle-monitoring')) {
+        //         const orderId = e.target.dataset.orderId;
+        //         const isMonitored = e.target.dataset.monitoring === 'true';
+        //         toggleOrderMonitoring(orderId, isMonitored);
+        //     }
+        // });
+    </script>
+</body>
+</html>
