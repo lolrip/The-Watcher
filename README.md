@@ -33,6 +33,11 @@
    ```
    - The dashboard will be available at `http://localhost:5001` (or the port you set).
 
+## Usage
+- Enter a trade manually
+- Set a stop order manually
+- The Watcher will detect the resting stop order and begin to monitor it
+
 ## File Structure
 
 - `app.py` - Main Flask app and background monitor thread.
