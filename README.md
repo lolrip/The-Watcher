@@ -1,10 +1,10 @@
 # TheWatcher
 
-Order Watcher 2.0: Automated monitoring and recreation of Schwab brokerage orders with a Flask dashboard.
+The Watcher: Automated monitoring and recreation of Schwab stop orders.
 
 ## Features
 
-- Monitors active Schwab orders and attempts to automatically recreate them if they disappear.
+- Monitors active Schwab orders and attempts to automatically recreate them if they are cancelled or rejected.
 - Web dashboard with live statistics, order table, and net liquidation value chart.
 - Secure (optional) HTTP Basic Auth for dashboard access.
 - Token status monitoring and warning system.
@@ -13,7 +13,7 @@ Order Watcher 2.0: Automated monitoring and recreation of Schwab brokerage order
 ## Setup
 
 1. **Clone the repository**  
-   `git clone https://github.com/yourusername/TheWatcher.git`
+   `git clone https://github.com/lolrip/TheWatcher.git`
 
 2. **Install dependencies**  
    ```
@@ -47,6 +47,6 @@ Order Watcher 2.0: Automated monitoring and recreation of Schwab brokerage order
 - Never commit your `.env`, `token.json`, or any credential files.
 - Use strong passwords for Flask authentication.
 
-## License
+## Credits
 
-MIT License (add your license here if needed).
+Created by the Research & Development Team at [Speaking Greeks](https://speakinggreeks.com).

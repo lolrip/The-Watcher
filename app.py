@@ -7,13 +7,13 @@ from dotenv import load_dotenv
 import logging
 import schwab
 import json
-from flask import Flask, render_template, jsonify, request, Response # Ensure Response is imported
-from functools import wraps # Import wraps for decorator
+from flask import Flask, render_template, jsonify, request, Response
+from functools import wraps
 
 # --- Existing Setup ---
 logging.basicConfig(
-    level=logging.INFO, # Consider DEBUG for more detailed lock info
-    format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s' # Added threadName
+    level=logging.INFO, 
+    format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s' 
 )
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -56,30 +56,29 @@ current_state = {
     "orders_recreated": 0,
     "positions": {"long": 0, "short": 0},
     "net_liq_history": [],
-    "ignored_orders": set() # Ensure initialized
+    "ignored_orders": set()
 }
 state_lock = threading.Lock()
-ignored_symbols = set() # Assuming this is still global for now
+ignored_symbols = set() 
 
-# --- Utility Functions (Modified) ---
+# --- Utility Functions ---
 
 def prepare_for_json(obj):
     """Prepare an object for JSON serialization by converting non-serializable types."""
     if isinstance(obj, set):
         return list(obj)
     elif isinstance(obj, (datetime.datetime, datetime.date)):
-         return obj.isoformat() # Handle datetime objects if they appear
+         return obj.isoformat() 
     elif isinstance(obj, dict):
         return {k: prepare_for_json(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [prepare_for_json(i) for i in obj]
-    # Add handling for other non-serializable types if necessary
     return obj
 
 def get_order_symbol(order):
     """Extract symbol from order data safely"""
     try:
-        # Check primary instrument first (common for single-leg orders)
+        # Check primary instrument first
         instrument = order.get('instrument')
         if instrument and isinstance(instrument, dict):
              symbol = instrument.get('symbol')
@@ -139,7 +138,7 @@ def save_ignored_items():
             # logger.debug("Acquired lock for save_ignored_items read")
             # Safely copy the sets to lists for saving
             ignored_orders_list = list(current_state.get('ignored_orders', set()))
-            ignored_symbols_list = list(ignored_symbols) # Assuming global or move to current_state
+            ignored_symbols_list = list(ignored_symbols) 
             # logger.debug("Releasing lock for save_ignored_items read")
         # --- Lock released ---
 
@@ -149,7 +148,7 @@ def save_ignored_items():
             json.dump({
                 'orders': ignored_orders_list,
                 'symbols': ignored_symbols_list
-            }, f, indent=2) # Add indent for readability
+            }, f, indent=2) 
         logger.info(f"Saved ignored items to disk (Orders: {len(ignored_orders_list)}, Symbols: {len(ignored_symbols_list)})")
         # logger.debug("Finished file I/O for save_ignored_items")
 
@@ -204,15 +203,15 @@ def load_ignored_items():
              ignored_symbols = set()
 
 
-# --- Flask Routes (Modified) ---
+# --- Flask Routes ---
 
 @app.route('/')
-@requires_auth # Apply the authentication decorator
+@requires_auth  
 def index():
     return render_template('index.html')
 
 @app.route('/api/orders')
-@requires_auth # Apply the authentication decorator
+@requires_auth  
 def get_orders():
     with state_lock:
         # logger.debug("Acquired lock for get_orders")
@@ -239,7 +238,7 @@ def get_orders():
 
 
 @app.route('/api/orders/<order_id>/stop_monitoring', methods=['POST'])
-@requires_auth # Apply the authentication decorator
+@requires_auth  
 def stop_order_monitoring(order_id):
     """Permanently stop monitoring for a specific order (non-blocking)."""
     order_id_str = str(order_id) # Ensure string comparison
@@ -289,13 +288,13 @@ def stop_order_monitoring(order_id):
 
 
 @app.route('/api/orders/<order_id>/toggle_monitoring', methods=['POST'])
-@requires_auth # Apply the authentication decorator
+@requires_auth  
 def toggle_order_monitoring(order_id):
     """Enable/disable monitoring for a specific order (non-blocking)."""
     order_id_str = str(order_id)
     logger.info(f"Received request to toggle monitoring for order {order_id_str}")
     needs_save = False
-    current_monitoring_status = False # Default assumption
+    current_monitoring_status = False # Default
     try:
         data = request.json
         if not data:
@@ -356,7 +355,7 @@ def toggle_order_monitoring(order_id):
 
 
 @app.route('/api/token-status')
-@requires_auth # Apply the authentication decorator
+@requires_auth  
 def get_token_status():
     """Return token expiration status for the UI"""
     try:
@@ -384,7 +383,7 @@ def get_token_status():
         # Calculate seconds until expiration for access token
         expires_in = max(0, expires_at - current_time)
 
-        # Calculate refresh token age (refresh tokens usually valid for 7 days)
+        # Calculate refresh token age (refresh tokens valid for 7 days)
         creation_timestamp = token_data.get('creation_timestamp', current_time)
         refresh_token_age = (current_time - creation_timestamp) / 86400  # Convert to days
 
@@ -408,7 +407,7 @@ def get_token_status():
         }), 500
 
 
-# --- Background Monitor (Minor adjustments for clarity) ---
+# --- Background Monitor ---
 
 def background_monitor():
     """Background thread to monitor orders and update dashboard state"""
@@ -416,7 +415,7 @@ def background_monitor():
 
     try:
         logger.info("Initializing Schwab client for background monitor...")
-        client = get_schwab_client() # Assumes this handles auth correctly
+        client = get_schwab_client()
         account_hash = get_account_hash(client)
         logger.info(f"Starting background monitoring for account {account_hash[:8]}...")
 
@@ -439,7 +438,7 @@ def background_monitor():
             try:
                 # --- Fetch data (API calls outside lock) ---
                 # logger.debug("Fetching active orders...")
-                active_orders_list = monitor.fetch_active_orders(client, account_hash) # Assuming this returns a list
+                active_orders_list = monitor.fetch_active_orders(client, account_hash) 
                 # logger.debug(f"Fetched {len(active_orders_list)} orders.")
 
                 if not isinstance(active_orders_list, list):
@@ -454,14 +453,12 @@ def background_monitor():
                 with state_lock:
                     # logger.debug("Acquired lock for reading ignore lists")
                     local_ignored_orders = current_state.get("ignored_orders", set()).copy()
-                    local_ignored_symbols = ignored_symbols.copy() # Assuming global
+                    local_ignored_symbols = ignored_symbols.copy() 
                     # logger.debug("Released lock for reading ignore lists")
 
                 # --- Process orders (logic outside lock, using local copies of ignore lists) ---
                 current_tracked_ids = set(tracked_orders.keys())
                 disappeared_order_ids = current_tracked_ids - latest_order_ids
-                new_order_ids = latest_order_ids - current_tracked_ids
-
                 orders_to_recreate = []
 
                 # Process disappeared orders
@@ -526,7 +523,7 @@ def background_monitor():
                 for order_data in orders_to_recreate:
                     symbol = get_order_symbol(order_data)
                     logger.info(f"Attempting to recreate order for {symbol} (ID: {order_data.get('orderId')})")
-                    # Ensure place_order uses the correct assetType logic from monitor.py 3
+                    # Ensure place_order uses the correct assetType logic from monitor.py 
                     if monitor.place_order(client, account_hash, order_data):
                         orders_recreated_count += 1
                         # Update count in shared state immediately after success
@@ -535,22 +532,17 @@ def background_monitor():
                         logger.info(f"Successfully recreated order for {symbol}. Total recreated: {orders_recreated_count}")
                     else:
                         logger.error(f"Failed to recreate order for {symbol} (ID: {order_data.get('orderId')}). Will retry next cycle if it remains disappeared.")
-                        # Add the order back to tracked_orders so we try again next time?
-                        # Or rely on it disappearing again in the next fetch?
-                        # Let's rely on the next fetch: if recreation fails, it won't be in latest_order_ids
-                        # and should be picked up again in the next cycle's 'disappeared' check.
-
 
                 # logger.info(f"Monitor cycle complete. Tracked orders: {len(tracked_orders)}. Ignored: {len(local_ignored_orders)}")
                 time.sleep(1) # Check interval
 
             except schwab.exceptions.AccessTokenError as e:
                  logger.error(f"Schwab Access Token Error in monitor loop: {e}. Attempting to refresh/re-auth might be needed.", exc_info=True)
-                 # Potentially add logic here to force a token refresh or alert the user
+                 # add logic here to force a token refresh or alert the user
                  time.sleep(60) # Wait longer after auth errors
             except schwab.exceptions.GeneralError as e:
                  logger.error(f"Schwab General API Error in monitor loop: {e}", exc_info=True)
-                 time.sleep(15) # Wait a bit longer after general API errors
+                 time.sleep(15) # Wait longer after general API errors
             except ConnectionError as e:
                  logger.error(f"Network Connection Error in monitor loop: {e}", exc_info=True)
                  time.sleep(30) # Wait longer if network is down
@@ -563,7 +555,7 @@ def background_monitor():
         with state_lock:
             current_state["monitoring_active"] = False
 
-# --- Other Helper Functions (get_schwab_client, get_account_hash, etc. - assumed ok) ---
+# --- Other Helper Functions ---
 # Make sure get_schwab_client uses easy_client which handles token refresh 1
 def get_schwab_client():
     """Create and return authenticated Schwab client"""
@@ -605,7 +597,7 @@ def get_account_hash(client):
         acc_num_response = client.get_account_numbers()
         if not acc_num_response.is_success:
              logger.error(f"Failed to get account numbers: {acc_num_response.status_code} - {acc_num_response.text}")
-             raise ConnectionError("Failed to retrieve account numbers from Schwab.") # Or a more specific error
+             raise ConnectionError("Failed to retrieve account numbers from Schwab.") 
 
         account_numbers_data = acc_num_response.json()
         if not account_numbers_data or not isinstance(account_numbers_data, list) or len(account_numbers_data) == 0:
