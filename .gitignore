@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.env
+env/
+venv/
+ENV/
+env.bak/
+*.egg-info/
+*.egg
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Token and secrets
+token.json
+ignored_items.json
+
+# Cache
+active_orders.json
+
+# Misc
+*.swp
