@@ -47,6 +47,7 @@
 
 - Never commit your `.env`, `token.json`, or any credential files.
 - Use strong passwords for Flask authentication.
+- Use at your **OWN RISK** and always monitor your accounts and positions.
 
 ## Credits
 
