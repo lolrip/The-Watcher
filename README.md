@@ -1,6 +1,7 @@
 # TheWatcher
 
-The Watcher: Automated monitoring and recreation of Schwab stop orders.
+<!-- Including dashboard screenshot here for quick visual context; helps users understand the UI before reading features -->
+![Dashboard Screenshot](dash.png)
 
 ## Features
 
