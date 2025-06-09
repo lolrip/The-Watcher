@@ -52,8 +52,9 @@
 
 - Never commit your `.env`, `token.json`, or any credential files.
 - Use strong passwords for Flask authentication.
-- Use at your **OWN RISK** and always monitor your accounts and positions.
 
-## Credits
+## TODO
 
-Created by the Research & Development Team at [Speaking Greeks](https://speakinggreeks.com).
+- Check stop trigger and compare with MID and decide to submit another stop order or a market order.
+
+Created at [Speaking Greeks](https://speakinggreeks.com).
