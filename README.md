@@ -53,6 +53,9 @@
 - Never commit your `.env`, `token.json`, or any credential files.
 - Use strong passwords for Flask authentication.
 
+## To Do
+- Add a check before re-submitting stop to ensure that the price hasn't moved too far away from the trigger (if so, use Plan B to get out).
+
 ## TODO
 
 - Check stop trigger and compare with MID and decide to submit another stop order or a market order.
